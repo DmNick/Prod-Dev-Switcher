@@ -15,6 +15,10 @@ const getMatched = (tabId) => {
 
     return Promise.all([result, tab])
         .then(([res, tab]) => {
+            if(!(res.prod && res.dev)) {
+                return null;
+            }
+            
             let tabUrl = new URL(isset(tab.url) 
                 ?? isset(tab.pendingUrl) 
                 ?? isset(tab[0].url) 
@@ -42,25 +46,26 @@ const init = async (tabId) => {
     );
 };
 
-chrome.tabs.onActivated.addListener(async ({tabId}) => init(tabId));
-chrome.tabs.onUpdated.addListener(async ({tabId}) => init(tabId));
+const click = async (tab) => {
+    let matched = await getMatched(tab.id) || [];
+    if(!matched.length) {
+        return;
+    }
 
-chrome.action.onClicked.addListener(async (tab) => {
-    const result = await chrome.storage.sync.get(['prod', 'dev']);
+    let choosedOne = ['prod', 'dev'].find(key => key !== matched[0]);
+    let reversed = await chrome.storage.sync.get([choosedOne]);
     let url = new URL(tab.url);
+    url.hostname = reversed[choosedOne];
 
-    let isMatched = Object.entries(result).find(([key, path]) => path === url.hostname);
-    if (!isMatched) {
-        chrome.tabs.create({ url: "https://" + result.prod });
-
-        return;
-    }
-    
-    let reversed = Object.entries(result).find(([key, path]) => path !== url.hostname);
-    url.hostname = chrome.action.setIcon({ path: type[reversed[0]]}) && result[reversed[0]];
-    if (!url.hostname || url.hostname === 'null' || url.hostname === '') {
+    if (!isset(url.hostname)) {
         return;
     }
 
-    chrome.tabs.update(tab.id, { url: url.toString() });
-});
+    return chrome.tabs.update(tab.id, { url: url.toString() });
+};
+
+chrome.tabs.onActivated.addListener(({tabId}) => init(tabId));
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => 
+    changeInfo?.status === 'complete' && init(tabId)
+);
+chrome.action.onClicked.addListener((tab) => click(tab));
