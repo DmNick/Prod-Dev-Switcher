@@ -6,32 +6,24 @@ const type = {
     default: 'ICON.png'
 };
 
-const getMatched = (tabId) => {
-    const result = chrome.storage.sync.get(['prod', 'dev']);
-    const tab = tabId 
-        ? chrome.tabs.get(tabId)
-        : chrome.tabs.query({ active: true, currentWindow: true });
-
-
-    return Promise.all([result, tab])
-        .then(([res, tab]) => {
-            if(!(res.prod && res.dev)) {
-                return null;
-            }
-            
-            let tabUrl = new URL(isset(tab.url) 
-                ?? isset(tab.pendingUrl) 
-                ?? isset(tab[0].url) 
-                ?? isset(tab[0].pendingUrl)
-            );
-
-            return Object.entries(res).find(([key, path]) => path === tabUrl.hostname);
-        })
-        .catch(err => {
-            console.error(err);
-
+const getMatched = async (tabId) => {
+    try {
+        const result = await chrome.storage.sync.get(['prod', 'dev']);
+        const tab = await (tabId 
+            ? chrome.tabs.get(tabId)
+            : chrome.tabs.query({ active: true, currentWindow: true }));
+        
+        if (!(result.prod && result.dev)) {
             return null;
-        });
+        }
+
+        let tabUrl = new URL(tab.url || tab.pendingUrl || tab[0]?.url || tab[0]?.pendingUrl);
+
+        return Object.entries(result).find(([key, path]) => path === tabUrl.hostname);
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 };
 
 const init = async (tabId) => {
@@ -48,14 +40,16 @@ const init = async (tabId) => {
 
 const click = async (tab) => {
     let matched = await getMatched(tab.id) || [];
+    let result = await chrome.storage.sync.get(['prod', 'dev']);
     if(!matched.length) {
-        return;
+        return isset(result.prod)
+            ? chrome.tabs.create({ url: "https://" + result.prod })
+            : false;
     }
 
-    let choosedOne = ['prod', 'dev'].find(key => key !== matched[0]);
-    let reversed = await chrome.storage.sync.get([choosedOne]);
+    let choosedOne = Object.entries(result).find(([key, path]) => key !== matched[0]);
     let url = new URL(tab.url);
-    url.hostname = reversed[choosedOne];
+    url.hostname = choosedOne[1];
 
     if (!isset(url.hostname)) {
         return;
