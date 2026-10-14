@@ -1,65 +1,186 @@
-import isset from './utils/isset.js';
-
-const type = {
-    prod: 'PROD-128.png',
-    dev: 'DEV-128.png',
-    default: 'ICON.png'
+const ICONS = {
+  prod: 'icons/PROD-128.png',
+  dev: 'icons/DEV-128.png',
+  default: 'icons/ICON.png'
 };
 
-const getMatched = async (tabId) => {
+const BADGE_COLORS = {
+  prod: '#E53935', // Red
+  dev: '#1E88E5'   // Blue
+};
+
+const parseUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  try {
+    return new URL(rawUrl);
+  } catch {
+    return null;
+  }
+};
+
+const getTab = async (tabId) => {
+  if (typeof tabId === 'number') {
     try {
-        const result = await chrome.storage.sync.get(['prod', 'dev']);
-        const tab = await (tabId 
-            ? chrome.tabs.get(tabId)
-            : chrome.tabs.query({ active: true, currentWindow: true }));
-        
-        if (!(result.prod && result.dev)) {
-            return null;
-        }
-
-        let tabUrl = new URL(tab.url || tab.pendingUrl || tab[0]?.url || tab[0]?.pendingUrl);
-
-        return Object.entries(result).find(([key, path]) => path === tabUrl.hostname);
-    } catch (err) {
-        console.error(err);
-        return null;
+      return await chrome.tabs.get(tabId);
+    } catch {
+      return null;
     }
+  }
+  const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return activeTab || null;
 };
 
-const init = async (tabId) => {
-    let matched = await getMatched(tabId) || [];
+const getRules = async () => {
+  try {
+    const result = await chrome.storage.sync.get(['rules', 'prod', 'dev']);
+    if (Array.isArray(result.rules) && result.rules.length > 0) {
+      return result.rules;
+    }
+    if (result.prod && result.dev) {
+      return [{
+        id: 'proj_legacy',
+        name: 'Main Project',
+        prod: result.prod,
+        dev: result.dev
+      }];
+    }
+    return [];
+  } catch (err) {
+    console.error('getRules error:', err);
+    return [];
+  }
+};
 
-    chrome.action.setIcon({ path: type[matched[0] ?? "default"]});
-    chrome.action.setBadgeText(
-        {
-            tabId: tabId,
-            text: matched[0] ?? "OFF"
-        }
-    );
+const getMatched = async (tabId, existingTab = null) => {
+  try {
+    const rules = await getRules();
+    const tab = existingTab || await getTab(tabId);
+    const rawUrl = tab?.url || tab?.pendingUrl;
+    const tabUrl = parseUrl(rawUrl);
+
+    if (!rules.length || !tabUrl) {
+      return { matched: null, rule: null, tab, tabUrl, rulesCount: rules.length };
+    }
+
+    const currentHost = tabUrl.host.toLowerCase();
+
+    for (const rule of rules) {
+      if (!rule.prod || !rule.dev) continue;
+
+      const prodUrl = parseUrl(rule.prod);
+      const devUrl = parseUrl(rule.dev);
+
+      if (prodUrl && prodUrl.host.toLowerCase() === currentHost) {
+        return {
+          matched: 'prod',
+          rule,
+          targetEnv: 'dev',
+          targetBase: devUrl,
+          tab,
+          tabUrl,
+          rulesCount: rules.length
+        };
+      }
+
+      if (devUrl && devUrl.host.toLowerCase() === currentHost) {
+        return {
+          matched: 'dev',
+          rule,
+          targetEnv: 'prod',
+          targetBase: prodUrl,
+          tab,
+          tabUrl,
+          rulesCount: rules.length
+        };
+      }
+    }
+
+    return { matched: null, rule: null, tab, tabUrl, rulesCount: rules.length };
+  } catch (err) {
+    console.error('getMatched error:', err);
+    return { matched: null, rule: null, tab: null, tabUrl: null, rulesCount: 0 };
+  }
+};
+
+const init = async (tabId, existingTab = null) => {
+  if (typeof tabId !== 'number') return;
+
+  const matchResult = await getMatched(tabId, existingTab);
+  const { matched, rule, targetEnv, targetBase, rulesCount } = matchResult;
+
+  if (matched && rule && targetBase) {
+    const badgeText = matched.toUpperCase();
+    const iconPath = ICONS[matched] || ICONS.default;
+    const projectName = rule.name ? `[${rule.name}] ` : '';
+    const tooltip = `${projectName}Switch to ${targetEnv.toUpperCase()} (${targetBase.origin})`;
+
+    await chrome.action.setIcon({ tabId, path: iconPath }).catch(() => {});
+    await chrome.action.setBadgeText({ tabId, text: badgeText }).catch(() => {});
+    await chrome.action.setBadgeBackgroundColor({ tabId, color: BADGE_COLORS[matched] }).catch(() => {});
+    if (chrome.action.setBadgeTextColor) {
+      await chrome.action.setBadgeTextColor({ tabId, color: '#FFFFFF' }).catch(() => {});
+    }
+    await chrome.action.setTitle({ tabId, title: tooltip }).catch(() => {});
+  } else {
+    await chrome.action.setIcon({ tabId, path: ICONS.default }).catch(() => {});
+    await chrome.action.setBadgeText({ tabId, text: '' }).catch(() => {});
+
+    const tooltip = rulesCount > 0
+      ? 'Prod-Dev Switcher (No matching project for this tab)'
+      : 'Prod-Dev Switcher (Click to configure projects in settings)';
+    await chrome.action.setTitle({ tabId, title: tooltip }).catch(() => {});
+  }
 };
 
 const click = async (tab) => {
-    let matched = await getMatched(tab.id) || [];
-    let result = await chrome.storage.sync.get(['prod', 'dev']);
-    if(!matched.length) {
-        return isset(result.prod)
-            ? chrome.tabs.create({ url: "https://" + result.prod })
-            : false;
+  try {
+    const matchResult = await getMatched(tab?.id, tab);
+    const { matched, targetBase, tabUrl, rulesCount } = matchResult;
+
+    // If no projects configured or current tab doesn't match any project, open settings
+    if (rulesCount === 0 || !matched || !targetBase) {
+      return chrome.runtime.openOptionsPage();
     }
 
-    let choosedOne = Object.entries(result).find(([key, path]) => key !== matched[0]);
-    let url = new URL(tab.url);
-    url.hostname = choosedOne[1];
+    const currentUrl = tabUrl || new URL(tab.url || tab.pendingUrl);
+    const newUrl = new URL(targetBase.href);
 
-    if (!isset(url.hostname)) {
-        return;
-    }
+    newUrl.pathname = currentUrl.pathname;
+    newUrl.search = currentUrl.search;
+    newUrl.hash = currentUrl.hash;
 
-    return chrome.tabs.update(tab.id, { url: url.toString() });
+    await chrome.tabs.update(tab.id, { url: newUrl.toString() });
+  } catch (err) {
+    console.error('click error:', err);
+  }
 };
 
-chrome.tabs.onActivated.addListener(({tabId}) => init(tabId));
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => 
-    changeInfo?.status === 'complete' && init(tabId)
-);
-chrome.action.onClicked.addListener((tab) => click(tab));
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  init(tabId);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+    init(tabId, tab);
+  }
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  click(tab);
+});
+
+// Immediately update active tab when projects change in settings
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'sync') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) init(tabs[0].id, tabs[0]);
+    });
+  }
+});
+
+// Initialize on extension startup or update
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) init(tabs[0].id, tabs[0]);
+  });
+});

@@ -1,20 +1,387 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Opcje Switcher</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prod-Dev Switcher Settings</title>
   <style>
-    label, input {
-      display: block;
-      margin: 10px;
+    :root {
+      --bg: #121316;
+      --card-bg: #1c1d24;
+      --card-inner: #16171d;
+      --border: #2c2f38;
+      --border-focus: #3b82f6;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --prod: #ef4444;
+      --dev: #3b82f6;
+      --success: #22c55e;
+      --error: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5);
+      height: fit-content;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header img {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+    }
+
+    .header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .project-card {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      position: relative;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .project-card:hover {
+      border-color: #3e4451;
+    }
+
+    .project-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .project-name-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 380px;
+    }
+
+    .project-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      width: 100%;
+      outline: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .project-name-input:focus {
+      background-color: #121316;
+      border-color: var(--border);
+    }
+
+    .project-name-input::placeholder {
+      color: #555d68;
+      font-weight: normal;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-delete:hover {
+      color: var(--error);
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .grid-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .grid-fields {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #c9d1d9;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-prod {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: var(--prod);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .badge-dev {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: var(--dev);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+    }
+
+    .url-input {
+      width: 100%;
+      background-color: #121316;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .url-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .url-input.input-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.25);
+    }
+
+    .field-error {
+      font-size: 0.775rem;
+      color: var(--error);
+      margin-top: 5px;
+      display: none;
+    }
+
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .list-actions {
+      margin-bottom: 24px;
+    }
+
+    .btn-add {
+      background-color: rgba(255, 255, 255, 0.04);
+      border: 1px dashed #3e4451;
+      color: #c9d1d9;
+      border-radius: 8px;
+      width: 100%;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-add:hover {
+      background-color: rgba(59, 130, 246, 0.08);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-save {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-save:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .status-msg {
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .status-msg.show {
+      opacity: 1;
+    }
+
+    .status-msg.success {
+      color: var(--success);
+    }
+
+    .status-msg.error {
+      color: var(--error);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+
+    .shortcut-info {
+      margin-top: 24px;
+      padding: 12px 16px;
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    kbd {
+      background-color: #272a33;
+      border: 1px solid #3e4451;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      color: #d1d5db;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <label for="prod">PROD:</label>
-  <input type="text" id="prod">
-  <label for="dev">DEV:</label>
-  <input type="text" id="dev">
-  <button id="save">Zapisz</button>
-  <script src="options.js"></script>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <img src="icons/ICON-48.png" alt="Icon">
+        <div>
+          <h1>Prod-Dev Switcher</h1>
+          <p>Configure multiple project domain pairs for one-click switching.</p>
+        </div>
+      </div>
+    </div>
+
+    <form id="settings-form" novalidate>
+      <div id="projects-container" class="projects-list">
+        <!-- Project cards rendered dynamically by options.js -->
+      </div>
+
+      <div class="list-actions">
+        <button type="button" id="btn-add-project" class="btn-add">
+          + Add Another Project
+        </button>
+      </div>
+
+      <div class="footer-actions">
+        <span class="status-msg" id="status-msg"></span>
+        <button type="submit" id="btn-save" class="btn-save">Save All Changes</button>
+      </div>
+    </form>
+
+    <div class="shortcut-info">
+      <span>Toggle switch shortcut:</span>
+      <kbd>Alt + Shift + S</kbd>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
 </body>
 </html>

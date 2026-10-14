@@ -1,22 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "Prod-Dev Switcher",
-    "version": "1.0",
-    "description": "Switcher z proda na deva i odwrotnie",
-    "permissions": [
-      "storage",
-      "tabs"
-    ],
-    "options_page": "options.html",
-    "background": {
-      "service_worker": "background.js",
-      "type": "module"
-    },
-    "action": {
-      "default_icon": {
-        "16": "ICON.png",
-        "48": "ICON.png",
-        "128": "ICON.png"
-      }
+  "manifest_version": 3,
+  "name": "Prod-Dev Switcher",
+  "version": "1.1",
+  "description": "One-click switching between environment domains.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icons/ICON-16.png",
+    "32": "icons/ICON-32.png",
+    "48": "icons/ICON-48.png",
+    "128": "icons/ICON.png"
+  },
+  "action": {
+    "default_icon": "icons/ICON.png",
+    "default_title": "Prod-Dev Switcher"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "Alt+Shift+S"
+      },
+      "description": "Switch between PROD and DEV"
     }
   }
+}
