@@ -165,11 +165,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Render projects list
+  const searchBox = document.getElementById('search-box');
+  const searchInput = document.getElementById('project-search');
+  const clearBtn = document.getElementById('btn-clear-search');
+  const emptyState = document.getElementById('search-empty-state');
+  const termDisplay = document.getElementById('search-term-display');
+
+  const filterPopupProjects = () => {
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    const cards = projectsContainer.querySelectorAll('.project-card');
+
+    if (clearBtn) {
+      clearBtn.style.display = query ? 'flex' : 'none';
+    }
+
+    let visibleCount = 0;
+    cards.forEach((card) => {
+      const text = card.dataset.searchText || '';
+      const matches = !query || text.includes(query);
+      if (matches) {
+        card.style.display = '';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (emptyState && termDisplay) {
+      if (query && visibleCount === 0 && cards.length > 0) {
+        termDisplay.textContent = searchInput.value.trim();
+        emptyState.style.display = 'block';
+      } else {
+        emptyState.style.display = 'none';
+      }
+    }
+
+    if (projectsCount) {
+      if (query) {
+        projectsCount.textContent = `(${visibleCount}/${cards.length})`;
+      } else {
+        projectsCount.textContent = cards.length > 0 ? `(${cards.length})` : '';
+      }
+    }
+  };
+
   if (projectsCount) {
     projectsCount.textContent = rules.length > 0 ? `(${rules.length})` : '';
   }
 
   if (rules.length === 0) {
+    if (searchBox) searchBox.style.display = 'none';
     projectsContainer.innerHTML = `
       <div class="empty-state">
         <p>No projects configured yet.</p>
@@ -183,6 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.close();
     });
   } else {
+    if (searchBox) searchBox.style.display = 'flex';
     rules.forEach((proj) => {
       const card = document.createElement('div');
       const isActive = matchResult.rule && proj.id === matchResult.rule.id;
@@ -191,6 +237,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const prodHost = getHostDisplay(proj.prod);
       const devHost = getHostDisplay(proj.dev);
       const displayName = proj.name || 'Unnamed Project';
+
+      card.dataset.searchText = `${displayName} ${proj.prod || ''} ${proj.dev || ''} ${prodHost} ${devHost}`.toLowerCase();
 
       card.innerHTML = `
         <div class="project-info">
@@ -225,6 +273,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       projectsContainer.appendChild(card);
+    });
+
+    searchInput?.addEventListener('input', () => {
+      filterPopupProjects();
+    });
+
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        filterPopupProjects();
+        searchInput.blur();
+      }
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        filterPopupProjects();
+        searchInput.focus();
+      }
     });
   }
 
