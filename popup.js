@@ -1,4 +1,6 @@
 /* global chrome */
+import { t, getLang, setLang, currentLang, applyI18nToDOM } from './i18n.js';
+import { initTheme, toggleTheme, currentTheme } from './theme.js';
 
 const formatUrl = (input) => {
   if (!input) return '';
@@ -28,7 +30,7 @@ const getRules = async () => {
     if (result.prod && result.dev) {
       return [{
         id: 'proj_legacy',
-        name: 'Main Project',
+        name: t('mainProject'),
         prod: result.prod,
         dev: result.dev
       }];
@@ -98,12 +100,31 @@ const getHostDisplay = (urlStr) => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  await initTheme();
+  await getLang();
+  applyI18nToDOM();
+
   const toggleBtn = document.getElementById('btn-toggle-current');
   const toggleLabel = document.getElementById('toggle-label');
   const toggleDesc = document.getElementById('toggle-desc');
   const optionsBtn = document.getElementById('btn-options');
   const projectsContainer = document.getElementById('projects-container');
   const projectsCount = document.getElementById('projects-count');
+  const searchBox = document.getElementById('search-box');
+  const searchInput = document.getElementById('project-search');
+  const clearBtn = document.getElementById('btn-clear-search');
+  const emptyState = document.getElementById('search-empty-state');
+  const termDisplay = document.getElementById('search-term-display');
+  const langBtn = document.getElementById('btn-popup-lang');
+  const langText = document.getElementById('popup-lang-text');
+  const themeBtn = document.getElementById('btn-popup-theme');
+  const themeIcon = document.getElementById('popup-theme-icon');
+
+  const updateControlsUI = () => {
+    if (langText) langText.textContent = currentLang.toUpperCase();
+    if (themeIcon) themeIcon.textContent = currentTheme === 'light' ? '☀️' : '🌙';
+  };
+  updateControlsUI();
 
   // Load current tab and rules in parallel
   const [tabs, rules] = await Promise.all([
@@ -114,36 +135,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   const activeTab = tabs && tabs[0] ? tabs[0] : null;
   const matchResult = getMatched(rules, activeTab);
 
-  // Update top toggle button UI
-  toggleBtn.classList.remove('env-prod', 'env-dev', 'env-unmatched');
+  const updateTopToggleUI = () => {
+    toggleBtn.classList.remove('env-prod', 'env-dev', 'env-unmatched');
 
-  if (matchResult.matched && matchResult.targetBase) {
-    const targetEnv = matchResult.targetEnv.toUpperCase();
-    const projPrefix = matchResult.rule?.name ? `[${matchResult.rule.name}] ` : '';
-    const targetHost = matchResult.targetBase.host;
+    if (matchResult.matched && matchResult.targetBase) {
+      const targetEnv = matchResult.targetEnv.toUpperCase();
+      const projPrefix = matchResult.rule?.name ? `[${matchResult.rule.name}] ` : '';
+      const targetHost = matchResult.targetBase.host;
 
-    if (matchResult.matched === 'prod') {
-      toggleBtn.classList.add('env-dev');
-      toggleLabel.textContent = `Switch to ${targetEnv}`;
+      if (matchResult.matched === 'prod') {
+        toggleBtn.classList.add('env-dev');
+      } else {
+        toggleBtn.classList.add('env-prod');
+      }
+      toggleLabel.textContent = t('toggleBtnSwitchTo', { env: targetEnv });
+      toggleDesc.textContent = `${projPrefix}${targetHost}`;
     } else {
-      toggleBtn.classList.add('env-prod');
-      toggleLabel.textContent = `Switch to ${targetEnv}`;
+      toggleBtn.classList.add('env-unmatched');
+      toggleLabel.textContent = t('toggleBtnMain');
+      if (rules.length === 0) {
+        toggleDesc.textContent = t('toggleSubtitleClickConfig');
+      } else {
+        toggleDesc.textContent = t('toggleSubtitleNoMatch');
+      }
     }
-    toggleDesc.textContent = `${projPrefix}${targetHost}`;
-  } else {
-    toggleBtn.classList.add('env-unmatched');
-    toggleLabel.textContent = 'Toggle PROD / DEV';
-    if (rules.length === 0) {
-      toggleDesc.textContent = 'Click to configure projects in settings';
-    } else {
-      toggleDesc.textContent = 'Active tab does not match any project';
-    }
-  }
+  };
 
-  // Toggle button click handler (mimics previous extension icon click)
+  updateTopToggleUI();
+
+  // Toggle button click handler
   toggleBtn.addEventListener('click', async () => {
     if (!matchResult.matched || !matchResult.targetBase || !activeTab?.id) {
-      // If no matching project or no rules, open options page
       chrome.runtime.openOptionsPage();
       window.close();
       return;
@@ -163,13 +185,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     window.close();
   });
-
-  // Render projects list
-  const searchBox = document.getElementById('search-box');
-  const searchInput = document.getElementById('project-search');
-  const clearBtn = document.getElementById('btn-clear-search');
-  const emptyState = document.getElementById('search-empty-state');
-  const termDisplay = document.getElementById('search-term-display');
 
   const filterPopupProjects = () => {
     const query = (searchInput?.value || '').trim().toLowerCase();
@@ -202,33 +217,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (projectsCount) {
       if (query) {
-        projectsCount.textContent = `(${visibleCount}/${cards.length})`;
+        projectsCount.textContent = t('countFilteredPopup', { visible: visibleCount, total: cards.length });
       } else {
-        projectsCount.textContent = cards.length > 0 ? `(${cards.length})` : '';
+        projectsCount.textContent = cards.length > 0 ? t('countTotal', { total: cards.length }) : '';
       }
     }
   };
 
-  if (projectsCount) {
-    projectsCount.textContent = rules.length > 0 ? `(${rules.length})` : '';
-  }
+  const renderProjects = () => {
+    projectsContainer.innerHTML = '';
 
-  if (rules.length === 0) {
-    if (searchBox) searchBox.style.display = 'none';
-    projectsContainer.innerHTML = `
-      <div class="empty-state">
-        <p>No projects configured yet.</p>
-        <button type="button" class="btn-empty-add" id="btn-empty-add">
-          + Add Project in Settings
-        </button>
-      </div>
-    `;
-    document.getElementById('btn-empty-add')?.addEventListener('click', () => {
-      chrome.runtime.openOptionsPage();
-      window.close();
-    });
-  } else {
+    if (rules.length === 0) {
+      if (searchBox) searchBox.style.display = 'none';
+      if (projectsCount) projectsCount.textContent = '';
+      projectsContainer.innerHTML = `
+        <div class="empty-state">
+          <p>${escapeHtml(t('popupNoProjectsYet'))}</p>
+          <button type="button" class="btn-empty-add" id="btn-empty-add">
+            ${escapeHtml(t('popupAddProject'))}
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-empty-add')?.addEventListener('click', () => {
+        chrome.runtime.openOptionsPage();
+        window.close();
+      });
+      return;
+    }
+
     if (searchBox) searchBox.style.display = 'flex';
+    if (projectsCount) {
+      projectsCount.textContent = t('countTotal', { total: rules.length });
+    }
+
     rules.forEach((proj) => {
       const card = document.createElement('div');
       const isActive = matchResult.rule && proj.id === matchResult.rule.id;
@@ -236,7 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const prodHost = getHostDisplay(proj.prod);
       const devHost = getHostDisplay(proj.dev);
-      const displayName = proj.name || 'Unnamed Project';
+      const displayName = proj.name || t('unnamedProject');
 
       card.dataset.searchText = `${displayName} ${proj.prod || ''} ${proj.dev || ''} ${prodHost} ${devHost}`.toLowerCase();
 
@@ -244,18 +265,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="project-info">
           <div class="project-name-row">
             <div class="project-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</div>
-            ${isActive ? '<span class="active-badge">Active</span>' : ''}
+            ${isActive ? `<span class="active-badge">${escapeHtml(t('activeBadge'))}</span>` : ''}
           </div>
           <div class="project-domains" title="${escapeHtml(prodHost)} &#8644; ${escapeHtml(devHost)}">
             ${escapeHtml(prodHost)} <span style="opacity:0.5;">&#8644;</span> ${escapeHtml(devHost)}
           </div>
         </div>
         <div class="project-actions">
-          <button type="button" class="btn-env btn-env-prod" title="Open PROD in new tab: ${escapeHtml(proj.prod)}">
-            PROD
+          <button type="button" class="btn-env btn-env-prod" title="${escapeHtml(t('openProdTitle', { url: proj.prod }))}">
+            ${escapeHtml(t('prodBadge'))}
           </button>
-          <button type="button" class="btn-env btn-env-dev" title="Open DEV in new tab: ${escapeHtml(proj.dev)}">
-            DEV
+          <button type="button" class="btn-env btn-env-dev" title="${escapeHtml(t('openDevTitle', { url: proj.dev }))}">
+            ${escapeHtml(t('devBadge'))}
           </button>
         </div>
       `;
@@ -275,26 +296,47 @@ document.addEventListener('DOMContentLoaded', async () => {
       projectsContainer.appendChild(card);
     });
 
-    searchInput?.addEventListener('input', () => {
+    filterPopupProjects();
+  };
+
+  renderProjects();
+
+  // Search input listeners
+  searchInput?.addEventListener('input', () => {
+    filterPopupProjects();
+  });
+
+  searchInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchInput.value = '';
       filterPopupProjects();
-    });
+      searchInput.blur();
+    }
+  });
 
-    searchInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        searchInput.value = '';
-        filterPopupProjects();
-        searchInput.blur();
-      }
-    });
+  clearBtn?.addEventListener('click', () => {
+    if (searchInput) {
+      searchInput.value = '';
+      filterPopupProjects();
+      searchInput.focus();
+    }
+  });
 
-    clearBtn?.addEventListener('click', () => {
-      if (searchInput) {
-        searchInput.value = '';
-        filterPopupProjects();
-        searchInput.focus();
-      }
-    });
-  }
+  // Language switcher button in popup
+  langBtn?.addEventListener('click', async () => {
+    const nextLang = currentLang === 'en' ? 'pl' : 'en';
+    await setLang(nextLang);
+    applyI18nToDOM();
+    updateControlsUI();
+    updateTopToggleUI();
+    renderProjects();
+  });
+
+  // Theme toggle button in popup
+  themeBtn?.addEventListener('click', async () => {
+    const nextTheme = await toggleTheme();
+    updateControlsUI();
+  });
 
   // Bottom Options button
   optionsBtn.addEventListener('click', () => {

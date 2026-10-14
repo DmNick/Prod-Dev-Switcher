@@ -110,11 +110,16 @@ const init = async (tabId, existingTab = null) => {
   const matchResult = await getMatched(tabId, existingTab);
   const { matched, rule, targetEnv, targetBase, rulesCount } = matchResult;
 
+  const langRes = await chrome.storage.sync.get(['lang']).catch(() => ({}));
+  const isPl = langRes?.lang === 'pl';
+
   if (matched && rule && targetBase) {
     const badgeText = matched.toUpperCase();
     const iconPath = ICONS[matched] || ICONS.default;
     const projectName = rule.name ? `[${rule.name}] ` : '';
-    const tooltip = `${projectName}Switch to ${targetEnv.toUpperCase()} (${targetBase.origin})`;
+    const tooltip = isPl
+      ? `${projectName}Przełącz na ${targetEnv.toUpperCase()} (${targetBase.origin})`
+      : `${projectName}Switch to ${targetEnv.toUpperCase()} (${targetBase.origin})`;
 
     await chrome.action.setIcon({ tabId, path: iconPath }).catch(() => {});
     await chrome.action.setBadgeText({ tabId, text: badgeText }).catch(() => {});
@@ -127,9 +132,16 @@ const init = async (tabId, existingTab = null) => {
     await chrome.action.setIcon({ tabId, path: ICONS.default }).catch(() => {});
     await chrome.action.setBadgeText({ tabId, text: '' }).catch(() => {});
 
-    const tooltip = rulesCount > 0
-      ? 'Prod-Dev Switcher (Click to view saved projects)'
-      : 'Prod-Dev Switcher (Click to configure projects in settings)';
+    let tooltip = '';
+    if (isPl) {
+      tooltip = rulesCount > 0
+        ? 'Prod-Dev Switcher (Kliknij, aby wyświetlić zapisane projekty)'
+        : 'Prod-Dev Switcher (Kliknij, aby skonfigurować projekty w ustawieniach)';
+    } else {
+      tooltip = rulesCount > 0
+        ? 'Prod-Dev Switcher (Click to view saved projects)'
+        : 'Prod-Dev Switcher (Click to configure projects in settings)';
+    }
     await chrome.action.setTitle({ tabId, title: tooltip }).catch(() => {});
   }
 

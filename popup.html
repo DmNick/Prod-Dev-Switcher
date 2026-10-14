@@ -1,37 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prod-Dev Switcher</title>
+  <title data-i18n="appTitle">Prod-Dev Switcher</title>
   <style>
-    :root {
-      --bg: #121316;
-      --card-bg: #1c1d24;
-      --card-inner: #16171d;
-      --border: #2c2f38;
-      --border-hover: #3e4451;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root, [data-theme="dark"] {
+      --bg: #0b0f17;
+      --card-bg: #141b26;
+      --card-inner: #0e131d;
+      --border: #232d3f;
+      --border-hover: #334158;
+      --text: #f1f5f9;
+      --text-muted: #8e9db3;
+      --text-dim: #5c6c84;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
       --prod: #ef4444;
-      --prod-hover: #dc2626;
+      --prod-bg: rgba(239, 68, 68, 0.12);
+      --prod-border: rgba(239, 68, 68, 0.28);
       --dev: #3b82f6;
-      --dev-hover: #2563eb;
-      --success: #22c55e;
+      --dev-bg: rgba(59, 130, 246, 0.12);
+      --dev-border: rgba(59, 130, 246, 0.28);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --success-border: rgba(16, 185, 129, 0.3);
+      --control-bg: #0e131d;
+      --control-border: #232d3f;
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f6fa;
+      --card-bg: #ffffff;
+      --card-inner: #f8fafc;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --prod: #dc2626;
+      --prod-bg: rgba(220, 38, 38, 0.08);
+      --prod-border: rgba(220, 38, 38, 0.25);
+      --dev: #2563eb;
+      --dev-bg: rgba(37, 99, 235, 0.08);
+      --dev-border: rgba(37, 99, 235, 0.25);
+      --success: #059669;
+      --success-bg: rgba(5, 150, 105, 0.1);
+      --success-border: rgba(5, 150, 105, 0.25);
+      --control-bg: #f1f5f9;
+      --control-border: #e2e8f0;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       width: 350px;
       margin: 0;
       padding: 14px;
@@ -39,14 +76,14 @@
     }
 
     .header-action {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .btn-toggle {
       width: 100%;
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 9px;
+      border-radius: 10px;
       padding: 10px 14px;
       color: #ffffff;
       cursor: pointer;
@@ -55,8 +92,8 @@
       align-items: center;
       gap: 3px;
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
       text-align: center;
+      font-family: inherit;
     }
 
     .btn-toggle:hover {
@@ -88,13 +125,13 @@
     }
 
     .btn-toggle.env-unmatched {
-      background: #1c1d24;
+      background: var(--card-bg);
       border-color: var(--border);
       box-shadow: none;
       color: var(--text-muted);
     }
     .btn-toggle.env-unmatched:hover {
-      background: #252833;
+      background: var(--card-inner);
       color: var(--text);
       border-color: var(--border-hover);
     }
@@ -109,7 +146,7 @@
 
     .toggle-subtitle {
       font-size: 0.73rem;
-      opacity: 0.85;
+      opacity: 0.88;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -118,15 +155,95 @@
 
     .section-header {
       font-size: 0.72rem;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
       margin-bottom: 8px;
       padding: 0 2px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+    }
+
+    .projects-count {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: normal;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 9px;
+      width: 13px;
+      height: 13px;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 26px 6px 27px;
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .btn-clear-search {
+      position: absolute;
+      right: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .btn-clear-search:hover {
+      color: var(--text);
+    }
+
+    .search-empty-state {
+      text-align: center;
+      padding: 14px 8px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    .search-empty-state span {
+      color: var(--text);
+      font-weight: 600;
     }
 
     .projects-list {
@@ -162,7 +279,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      transition: border-color 0.15s ease, background-color 0.15s ease;
     }
 
     .project-card:hover {
@@ -170,8 +286,8 @@
     }
 
     .project-card.active-project {
-      border-color: rgba(59, 130, 246, 0.6);
-      background-color: rgba(59, 130, 246, 0.08);
+      border-color: rgba(59, 130, 246, 0.5);
+      background-color: var(--dev-bg);
     }
 
     .project-info {
@@ -186,7 +302,7 @@
     }
 
     .project-name {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--text);
       white-space: nowrap;
@@ -198,12 +314,12 @@
       font-size: 0.62rem;
       font-weight: 700;
       color: var(--success);
-      background-color: rgba(34, 197, 94, 0.15);
-      border: 1px solid rgba(34, 197, 94, 0.3);
+      background-color: var(--success-bg);
+      border: 1px solid var(--success-border);
       padding: 1px 4px;
       border-radius: 3px;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
       flex-shrink: 0;
     }
 
@@ -231,15 +347,15 @@
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      transition: all 0.15s ease;
       outline: none;
       border: 1px solid transparent;
+      font-family: inherit;
     }
 
     .btn-env-prod {
-      background-color: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.35);
-      color: #f87171;
+      background-color: var(--prod-bg);
+      border-color: var(--prod-border);
+      color: var(--prod);
     }
 
     .btn-env-prod:hover {
@@ -250,9 +366,9 @@
     }
 
     .btn-env-dev {
-      background-color: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.35);
-      color: #60a5fa;
+      background-color: var(--dev-bg);
+      border-color: var(--dev-border);
+      color: var(--dev);
     }
 
     .btn-env-dev:hover {
@@ -277,121 +393,80 @@
     }
 
     .btn-empty-add {
-      background-color: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      color: #60a5fa;
-      border-radius: 5px;
-      padding: 4px 10px;
+      background-color: var(--dev-bg);
+      border: 1px solid var(--dev-border);
+      color: var(--dev);
+      border-radius: 6px;
+      padding: 5px 12px;
       font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
-      transition: background-color 0.15s ease;
     }
 
     .btn-empty-add:hover {
-      background-color: rgba(59, 130, 246, 0.3);
+      background-color: var(--dev);
+      color: #ffffff;
     }
 
     .footer {
       border-top: 1px solid var(--border);
       padding-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .btn-options {
-      width: 100%;
+      flex: 1;
       background-color: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 7px;
-      padding: 7px 12px;
+      padding: 7px 10px;
       color: var(--text-muted);
       font-size: 0.8rem;
       font-weight: 500;
+      font-family: inherit;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: all 0.15s ease;
     }
 
     .btn-options:hover {
-      background-color: #252833;
+      background-color: var(--card-inner);
       color: var(--text);
       border-color: var(--border-hover);
     }
 
-    .search-box {
-      position: relative;
+    .footer-controls {
       display: flex;
       align-items: center;
-      margin-bottom: 8px;
+      gap: 5px;
     }
 
-    .search-icon {
-      position: absolute;
-      left: 9px;
-      width: 13px;
-      height: 13px;
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-
-    .search-input {
-      width: 100%;
+    .btn-icon-control {
       background-color: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 7px;
-      padding: 6px 26px 6px 27px;
-      color: var(--text);
-      font-size: 0.8rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .search-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-    }
-
-    .search-input::placeholder {
-      color: #6b7280;
-    }
-
-    .btn-clear-search {
-      position: absolute;
-      right: 6px;
-      background: transparent;
-      border: none;
+      height: 32px;
+      min-width: 32px;
+      padding: 0 6px;
       color: var(--text-muted);
-      cursor: pointer;
       font-size: 0.75rem;
-      padding: 2px 4px;
-      border-radius: 3px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      line-height: 1;
-      transition: color 0.15s ease;
     }
 
-    .btn-clear-search:hover {
+    .btn-icon-control:hover {
+      background-color: var(--card-inner);
       color: var(--text);
-    }
-
-    .search-empty-state {
-      text-align: center;
-      padding: 14px 8px;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      border: 1px dashed var(--border);
-      border-radius: 7px;
-      margin-bottom: 8px;
-      display: none;
-    }
-
-    .search-empty-state span {
-      color: var(--text);
-      font-weight: 600;
+      border-color: var(--border-hover);
     }
   </style>
 </head>
@@ -400,15 +475,15 @@
     <button type="button" id="btn-toggle-current" class="btn-toggle">
       <div class="toggle-main">
         <span>&#8644;</span>
-        <span id="toggle-label">Toggle PROD / DEV</span>
+        <span id="toggle-label" data-i18n="toggleBtnMain">Toggle PROD / DEV</span>
       </div>
-      <div class="toggle-subtitle" id="toggle-desc">Switch environment for active tab</div>
+      <div class="toggle-subtitle" id="toggle-desc" data-i18n="toggleSubtitleSwitchActive">Switch environment for active tab</div>
     </button>
   </div>
 
   <div class="section-header">
-    <span>Saved Projects</span>
-    <span id="projects-count"></span>
+    <span data-i18n="savedProjects">Saved Projects</span>
+    <span id="projects-count" class="projects-count"></span>
   </div>
 
   <div class="search-box" id="search-box" style="display: none;">
@@ -419,15 +494,16 @@
       type="text" 
       id="project-search" 
       class="search-input" 
+      data-i18n-placeholder="searchPlaceholderPopup"
       placeholder="Search projects..." 
       autocomplete="off"
       spellcheck="false"
     >
-    <button type="button" id="btn-clear-search" class="btn-clear-search" title="Clear search" aria-label="Clear search" style="display: none;">✕</button>
+    <button type="button" id="btn-clear-search" class="btn-clear-search" data-i18n-title="clearSearch" aria-label="Clear search" style="display: none;">✕</button>
   </div>
 
   <div id="search-empty-state" class="search-empty-state">
-    No projects match &ldquo;<span id="search-term-display"></span>&rdquo;
+    <span data-i18n="noProjectsMatchPopup">No projects match</span> &ldquo;<span id="search-term-display"></span>&rdquo;
   </div>
 
   <div id="projects-container" class="projects-list">
@@ -436,9 +512,17 @@
 
   <div class="footer">
     <button type="button" id="btn-options" class="btn-options">
-      <span>&#9881;</span>
-      <span>Options</span>
+      <span>⚙️</span>
+      <span data-i18n="btnOptions">Settings / Options</span>
     </button>
+    <div class="footer-controls">
+      <button type="button" id="btn-popup-lang" class="btn-icon-control" data-i18n-title="langLabel" aria-label="Language">
+        <span id="popup-lang-text">EN</span>
+      </button>
+      <button type="button" id="btn-popup-theme" class="btn-icon-control" data-i18n-title="themeToggleTitle" aria-label="Toggle theme">
+        <span id="popup-theme-icon">🌙</span>
+      </button>
+    </div>
   </div>
 
   <script type="module" src="popup.js"></script>

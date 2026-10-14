@@ -1,36 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prod-Dev Switcher Settings</title>
+  <title data-i18n="optionsTitle">Prod-Dev Switcher Settings</title>
   <style>
-    :root {
-      --bg: #121316;
-      --card-bg: #1c1d24;
-      --card-inner: #16171d;
-      --border: #2c2f38;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root, [data-theme="dark"] {
+      --bg: #0b0f17;
+      --card-bg: #141b26;
+      --card-inner: #0e131d;
+      --border: #232d3f;
+      --border-hover: #334158;
       --border-focus: #3b82f6;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
+      --text: #f1f5f9;
+      --text-muted: #8e9db3;
+      --text-dim: #5c6c84;
       --primary: #3b82f6;
       --primary-hover: #2563eb;
       --prod: #ef4444;
+      --prod-bg: rgba(239, 68, 68, 0.12);
+      --prod-border: rgba(239, 68, 68, 0.28);
       --dev: #3b82f6;
-      --success: #22c55e;
+      --dev-bg: rgba(59, 130, 246, 0.12);
+      --dev-border: rgba(59, 130, 246, 0.28);
+      --success: #10b981;
       --error: #f87171;
+      --kbd-bg: #1c2433;
+      --kbd-border: #2a364d;
+      --kbd-text: #cbd5e1;
+      --control-bg: #0e131d;
+      --control-border: #232d3f;
+      --control-active-bg: #2563eb;
+      --control-active-text: #ffffff;
+      --shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.45);
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f6fa;
+      --card-bg: #ffffff;
+      --card-inner: #f8fafc;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --border-focus: #3b82f6;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --prod: #dc2626;
+      --prod-bg: rgba(220, 38, 38, 0.08);
+      --prod-border: rgba(220, 38, 38, 0.25);
+      --dev: #2563eb;
+      --dev-bg: rgba(37, 99, 235, 0.08);
+      --dev-border: rgba(37, 99, 235, 0.25);
+      --success: #059669;
+      --error: #dc2626;
+      --kbd-bg: #f1f5f9;
+      --kbd-border: #cbd5e1;
+      --kbd-text: #475569;
+      --control-bg: #f1f5f9;
+      --control-border: #e2e8f0;
+      --control-active-bg: #2563eb;
+      --control-active-text: #ffffff;
+      --shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.08);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
     }
 
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -42,9 +92,9 @@
       max-width: 760px;
       background-color: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 32px;
-      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--shadow);
       height: fit-content;
     }
 
@@ -56,6 +106,7 @@
       margin-bottom: 28px;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
     }
 
     .header-left {
@@ -65,285 +116,81 @@
     }
 
     .header img {
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     }
 
     .header h1 {
       font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--text);
     }
 
     .header p {
       font-size: 0.875rem;
       color: var(--text-muted);
       margin-top: 4px;
+      line-height: 1.4;
     }
 
-    .projects-list {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      margin-bottom: 20px;
-    }
-
-    .project-card {
-      background-color: var(--card-inner);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px;
-      position: relative;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .project-card:hover {
-      border-color: #3e4451;
-    }
-
-    .project-card-header {
+    .header-controls {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
+      gap: 10px;
     }
 
-    .project-name-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
-      max-width: 380px;
-    }
-
-    .project-name-input {
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      color: #ffffff;
-      font-size: 1rem;
-      font-weight: 600;
-      padding: 4px 8px;
-      width: 100%;
-      outline: none;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-
-    .project-name-input:focus {
-      background-color: #121316;
-      border-color: var(--border);
-    }
-
-    .project-name-input::placeholder {
-      color: #555d68;
-      font-weight: normal;
-    }
-
-    .btn-delete {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-    }
-
-    .btn-delete:hover {
-      color: var(--error);
-      background-color: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.3);
-    }
-
-    .grid-fields {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    @media (max-width: 640px) {
-      .grid-fields {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .field-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #c9d1d9;
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .badge-prod {
-      background-color: rgba(239, 68, 68, 0.15);
-      color: var(--prod);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-    }
-
-    .badge-dev {
-      background-color: rgba(59, 130, 246, 0.15);
-      color: var(--dev);
-      border: 1px solid rgba(59, 130, 246, 0.35);
-    }
-
-    .url-input {
-      width: 100%;
-      background-color: #121316;
-      border: 1px solid var(--border);
+    .lang-picker {
+      display: inline-flex;
+      background-color: var(--control-bg);
+      border: 1px solid var(--control-border);
       border-radius: 8px;
-      padding: 10px 12px;
-      color: var(--text);
-      font-size: 0.9rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      padding: 3px;
+      gap: 3px;
     }
 
-    .url-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-    }
-
-    .url-input.input-error {
-      border-color: var(--error);
-      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.25);
-    }
-
-    .field-error {
-      font-size: 0.775rem;
-      color: var(--error);
-      margin-top: 5px;
-      display: none;
-    }
-
-    .field-hint {
+    .btn-lang {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
       font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 5px;
-    }
-
-    .list-actions {
-      margin-bottom: 24px;
-    }
-
-    .btn-add {
-      background-color: rgba(255, 255, 255, 0.04);
-      border: 1px dashed #3e4451;
-      color: #c9d1d9;
-      border-radius: 8px;
-      width: 100%;
-      padding: 12px;
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 5px 9px;
+      border-radius: 6px;
       cursor: pointer;
+      line-height: 1;
+    }
+
+    .btn-lang:hover {
+      color: var(--text);
+    }
+
+    .btn-lang.active {
+      background-color: var(--control-active-bg);
+      color: var(--control-active-text);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-theme {
+      background-color: var(--control-bg);
+      border: 1px solid var(--control-border);
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.15s ease;
-    }
-
-    .btn-add:hover {
-      background-color: rgba(59, 130, 246, 0.08);
-      border-color: var(--primary);
-      color: #ffffff;
-    }
-
-    .footer-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    .btn-save {
-      background-color: var(--primary);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 24px;
-      font-size: 0.95rem;
-      font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.15s ease;
-    }
-
-    .btn-save:hover {
-      background-color: var(--primary-hover);
-    }
-
-    .status-msg {
-      font-size: 0.875rem;
-      font-weight: 500;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .status-msg.show {
-      opacity: 1;
-    }
-
-    .status-msg.success {
-      color: var(--success);
-    }
-
-    .status-msg.error {
-      color: var(--error);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 32px 16px;
+      font-size: 0.95rem;
       color: var(--text-muted);
-      font-size: 0.9rem;
-      border: 1px dashed var(--border);
-      border-radius: 10px;
     }
 
-    .shortcut-info {
-      margin-top: 24px;
-      padding: 12px 16px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.825rem;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    kbd {
-      background-color: #272a33;
-      border: 1px solid #3e4451;
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 0.75rem;
-      color: #d1d5db;
-      font-family: monospace;
+    .btn-theme:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
     }
 
     .section-header {
@@ -354,7 +201,7 @@
       font-size: 0.8rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
     }
 
@@ -362,6 +209,7 @@
       font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: 600;
+      letter-spacing: normal;
     }
 
     .search-box {
@@ -376,7 +224,7 @@
       left: 13px;
       width: 16px;
       height: 16px;
-      color: var(--text-muted);
+      color: var(--text-dim);
       pointer-events: none;
     }
 
@@ -384,22 +232,21 @@
       width: 100%;
       background-color: var(--card-inner);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 9px;
       padding: 10px 38px 10px 38px;
       color: var(--text);
       font-size: 0.9rem;
       font-family: inherit;
       outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .search-input:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
 
     .search-input::placeholder {
-      color: #555d68;
+      color: var(--text-dim);
     }
 
     .btn-clear-search {
@@ -415,7 +262,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: color 0.15s ease;
     }
 
     .btn-clear-search:hover {
@@ -437,6 +283,276 @@
       color: var(--text);
       font-weight: 600;
     }
+
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .project-card {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+    }
+
+    .project-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .project-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .project-name-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .project-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .project-name-input:focus {
+      background-color: var(--card-bg);
+      border-color: var(--border);
+    }
+
+    .project-name-input::placeholder {
+      color: var(--text-dim);
+      font-weight: normal;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-delete:hover {
+      color: var(--error);
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .grid-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .grid-fields {
+        grid-template-columns: 1fr;
+      }
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .header-controls {
+        align-self: flex-end;
+      }
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-prod {
+      background-color: var(--prod-bg);
+      color: var(--prod);
+      border: 1px solid var(--prod-border);
+    }
+
+    .badge-dev {
+      background-color: var(--dev-bg);
+      color: var(--dev);
+      border: 1px solid var(--dev-border);
+    }
+
+    .url-input {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .url-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .url-input.input-error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.25);
+    }
+
+    .field-error {
+      font-size: 0.775rem;
+      color: var(--error);
+      margin-top: 5px;
+      display: none;
+    }
+
+    .field-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .field-hint code {
+      color: var(--text);
+      background-color: var(--control-bg);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .list-actions {
+      margin-bottom: 24px;
+    }
+
+    .btn-add {
+      background-color: transparent;
+      border: 1px dashed var(--border-hover);
+      color: var(--text-muted);
+      border-radius: 9px;
+      width: 100%;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-add:hover {
+      background-color: rgba(59, 130, 246, 0.08);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-save {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-save:hover {
+      background-color: var(--primary-hover);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .status-msg {
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .status-msg.show {
+      opacity: 1;
+    }
+
+    .status-msg.success {
+      color: var(--success);
+    }
+
+    .status-msg.error {
+      color: var(--error);
+    }
+
+    .shortcut-info {
+      margin-top: 24px;
+      padding: 12px 16px;
+      background-color: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    kbd {
+      background-color: var(--kbd-bg);
+      border: 1px solid var(--kbd-border);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      color: var(--kbd-text);
+      font-family: monospace;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -445,15 +561,24 @@
       <div class="header-left">
         <img src="icons/ICON-48.png" alt="Icon">
         <div>
-          <h1>Prod-Dev Switcher</h1>
-          <p>Configure multiple project domain pairs for one-click switching.</p>
+          <h1 data-i18n="appTitle">Prod-Dev Switcher</h1>
+          <p data-i18n="appSubtitle">Configure multiple project domain pairs for one-click switching.</p>
         </div>
+      </div>
+      <div class="header-controls">
+        <div class="lang-picker" id="lang-picker" role="group" aria-label="Language selection">
+          <button type="button" class="btn-lang" data-lang="en">EN</button>
+          <button type="button" class="btn-lang" data-lang="pl">PL</button>
+        </div>
+        <button type="button" id="btn-theme-toggle" class="btn-theme" data-i18n-title="themeToggleTitle" aria-label="Toggle theme">
+          <span id="theme-icon">🌙</span>
+        </button>
       </div>
     </div>
 
     <form id="settings-form" novalidate>
       <div class="section-header">
-        <span>Saved Projects</span>
+        <span data-i18n="savedProjects">Saved Projects</span>
         <span id="projects-count" class="projects-count"></span>
       </div>
 
@@ -465,15 +590,16 @@
           type="text" 
           id="project-search" 
           class="search-input" 
+          data-i18n-placeholder="searchPlaceholderOptions"
           placeholder="Search projects by name, PROD or DEV URL..." 
           autocomplete="off"
           spellcheck="false"
         >
-        <button type="button" id="btn-clear-search" class="btn-clear-search" title="Clear search" aria-label="Clear search" style="display: none;">✕</button>
+        <button type="button" id="btn-clear-search" class="btn-clear-search" data-i18n-title="clearSearch" aria-label="Clear search" style="display: none;">✕</button>
       </div>
 
       <div id="search-empty-state" class="search-empty-state">
-        No projects found matching &ldquo;<span id="search-term-display"></span>&rdquo;
+        <span data-i18n="noProjectsMatch">No projects found matching</span> &ldquo;<span id="search-term-display"></span>&rdquo;
       </div>
 
       <div id="projects-container" class="projects-list">
@@ -481,19 +607,19 @@
       </div>
 
       <div class="list-actions">
-        <button type="button" id="btn-add-project" class="btn-add">
+        <button type="button" id="btn-add-project" class="btn-add" data-i18n="addProjectBtn">
           + Add Another Project
         </button>
       </div>
 
       <div class="footer-actions">
         <span class="status-msg" id="status-msg"></span>
-        <button type="submit" id="btn-save" class="btn-save">Save All Changes</button>
+        <button type="submit" id="btn-save" class="btn-save" data-i18n="saveBtn">Save All Changes</button>
       </div>
     </form>
 
     <div class="shortcut-info">
-      <span>Toggle switch shortcut:</span>
+      <span data-i18n="shortcutLabel">Toggle switch shortcut:</span>
       <kbd>Alt + Shift + S</kbd>
     </div>
   </div>

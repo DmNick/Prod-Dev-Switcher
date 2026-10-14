@@ -1,3 +1,7 @@
+/* global chrome */
+import { t, getLang, setLang, currentLang, applyI18nToDOM } from './i18n.js';
+import { initTheme, toggleTheme, currentTheme } from './theme.js';
+
 const normalizeUrl = (input) => {
   const trimmed = input.trim();
   if (!trimmed) return '';
@@ -26,6 +30,15 @@ const showStatus = (message, type = 'success') => {
   }, 3500);
 };
 
+const escapeHtml = (str) => {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 const createCardElement = (project = {}) => {
   const cardId = project.id || `proj_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
   const card = document.createElement('div');
@@ -38,48 +51,48 @@ const createCardElement = (project = {}) => {
         <input 
           type="text" 
           class="project-name-input" 
-          placeholder="Project name (e.g. My Website)" 
+          placeholder="${escapeHtml(t('projectNamePlaceholder'))}" 
           value="${project.name ? escapeHtml(project.name) : ''}"
           autocomplete="off"
         >
       </div>
-      <button type="button" class="btn-delete" title="Delete this project">
-        ✕ Delete
+      <button type="button" class="btn-delete" title="${escapeHtml(t('deleteTitle'))}">
+        ${escapeHtml(t('deleteBtn'))}
       </button>
     </div>
     <div class="grid-fields">
       <div class="field-group">
         <label class="field-label">
-          <span class="badge badge-prod">PROD</span>
-          <span>Production URL:</span>
+          <span class="badge badge-prod">${escapeHtml(t('prodBadge'))}</span>
+          <span class="label-prod-text">${escapeHtml(t('prodLabel'))}</span>
         </label>
         <input 
           type="text" 
           class="url-input input-prod" 
-          placeholder="https://example.com" 
+          placeholder="${escapeHtml(t('prodPlaceholder'))}" 
           value="${project.prod ? escapeHtml(project.prod) : ''}"
           spellcheck="false" 
           autocomplete="off"
         >
         <p class="field-error error-prod"></p>
-        <p class="field-hint">e.g. <code>https://example.com</code> or <code>example.com</code></p>
+        <p class="field-hint">${t('prodHint').replace('https://example.com', '<code>https://example.com</code>').replace('example.com', '<code>example.com</code>')}</p>
       </div>
 
       <div class="field-group">
         <label class="field-label">
-          <span class="badge badge-dev">DEV</span>
-          <span>Development URL:</span>
+          <span class="badge badge-dev">${escapeHtml(t('devBadge'))}</span>
+          <span class="label-dev-text">${escapeHtml(t('devLabel'))}</span>
         </label>
         <input 
           type="text" 
           class="url-input input-dev" 
-          placeholder="http://localhost:3000" 
+          placeholder="${escapeHtml(t('devPlaceholder'))}" 
           value="${project.dev ? escapeHtml(project.dev) : ''}"
           spellcheck="false" 
           autocomplete="off"
         >
         <p class="field-error error-dev"></p>
-        <p class="field-hint">e.g. <code>http://localhost:3000</code> or <code>localhost:3000</code></p>
+        <p class="field-hint">${t('devHint').replace('http://localhost:3000', '<code>http://localhost:3000</code>').replace('localhost:3000', '<code>localhost:3000</code>')}</p>
       </div>
     </div>
   `;
@@ -120,15 +133,6 @@ const createCardElement = (project = {}) => {
   });
 
   return card;
-};
-
-const escapeHtml = (str) => {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 };
 
 const filterProjects = () => {
@@ -172,9 +176,9 @@ const filterProjects = () => {
 
   if (projectsCount) {
     if (query) {
-      projectsCount.textContent = `(${visibleCount} of ${cards.length})`;
+      projectsCount.textContent = t('countFiltered', { visible: visibleCount, total: cards.length });
     } else {
-      projectsCount.textContent = cards.length > 0 ? `(${cards.length})` : '';
+      projectsCount.textContent = cards.length > 0 ? t('countTotal', { total: cards.length }) : '';
     }
   }
 };
@@ -185,6 +189,55 @@ const addProjectCard = (projectData = {}) => {
   container.appendChild(card);
   filterProjects();
   return card;
+};
+
+const refreshAllCardLabels = () => {
+  const cards = document.querySelectorAll('.project-card');
+  cards.forEach((card) => {
+    const nameInput = card.querySelector('.project-name-input');
+    if (nameInput) nameInput.placeholder = t('projectNamePlaceholder');
+
+    const deleteBtn = card.querySelector('.btn-delete');
+    if (deleteBtn) {
+      deleteBtn.textContent = t('deleteBtn');
+      deleteBtn.title = t('deleteTitle');
+    }
+
+    const prodBadge = card.querySelector('.badge-prod');
+    if (prodBadge) prodBadge.textContent = t('prodBadge');
+
+    const prodLabel = card.querySelector('.label-prod-text');
+    if (prodLabel) prodLabel.textContent = t('prodLabel');
+
+    const prodHint = card.querySelector('.field-group:first-child .field-hint');
+    if (prodHint) prodHint.innerHTML = t('prodHint').replace('https://example.com', '<code>https://example.com</code>').replace('example.com', '<code>example.com</code>');
+
+    const devBadge = card.querySelector('.badge-dev');
+    if (devBadge) devBadge.textContent = t('devBadge');
+
+    const devLabel = card.querySelector('.label-dev-text');
+    if (devLabel) devLabel.textContent = t('devLabel');
+
+    const devHint = card.querySelector('.field-group:last-child .field-hint');
+    if (devHint) devHint.innerHTML = t('devHint').replace('http://localhost:3000', '<code>http://localhost:3000</code>').replace('localhost:3000', '<code>localhost:3000</code>');
+  });
+};
+
+const updateThemeIcon = (theme) => {
+  const icon = document.getElementById('theme-icon');
+  if (icon) {
+    icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  }
+};
+
+const updateLangPickerUI = (lang) => {
+  document.querySelectorAll('.btn-lang').forEach((btn) => {
+    if (btn.getAttribute('data-lang') === lang) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
 };
 
 // Form submission & validation
@@ -211,7 +264,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
     prodError.style.display = 'none';
     devError.style.display = 'none';
 
-    const name = nameInput.value.trim() || `Project ${index + 1}`;
+    const name = nameInput.value.trim() || t('defaultProjectName', { index: index + 1 });
     const rawProd = prodInput.value.trim();
     const rawDev = devInput.value.trim();
 
@@ -222,11 +275,11 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 
     if (!rawProd && !rawDev) {
       prodInput.classList.add('input-error');
-      prodError.textContent = 'PROD URL is required.';
+      prodError.textContent = t('errorProdRequired');
       prodError.style.display = 'block';
 
       devInput.classList.add('input-error');
-      devError.textContent = 'DEV URL is required.';
+      devError.textContent = t('errorDevRequired');
       devError.style.display = 'block';
       hasErrors = true;
       return;
@@ -234,7 +287,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 
     if (!rawProd) {
       prodInput.classList.add('input-error');
-      prodError.textContent = 'PROD URL is required.';
+      prodError.textContent = t('errorProdRequired');
       prodError.style.display = 'block';
       hasErrors = true;
       return;
@@ -242,7 +295,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
 
     if (!rawDev) {
       devInput.classList.add('input-error');
-      devError.textContent = 'DEV URL is required.';
+      devError.textContent = t('errorDevRequired');
       devError.style.display = 'block';
       hasErrors = true;
       return;
@@ -255,7 +308,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
       normalizedProd = normalizeUrl(rawProd);
     } catch {
       prodInput.classList.add('input-error');
-      prodError.textContent = 'Invalid PROD URL or domain.';
+      prodError.textContent = t('errorInvalidProd');
       prodError.style.display = 'block';
       hasErrors = true;
     }
@@ -264,7 +317,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
       normalizedDev = normalizeUrl(rawDev);
     } catch {
       devInput.classList.add('input-error');
-      devError.textContent = 'Invalid DEV URL or domain.';
+      devError.textContent = t('errorInvalidDev');
       devError.style.display = 'block';
       hasErrors = true;
     }
@@ -275,7 +328,7 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
         const devHost = new URL(normalizedDev).host.toLowerCase();
         if (prodHost === devHost) {
           devInput.classList.add('input-error');
-          devError.textContent = 'DEV and PROD cannot have the exact same host.';
+          devError.textContent = t('errorSameHost');
           devError.style.display = 'block';
           hasErrors = true;
         }
@@ -301,16 +354,16 @@ document.getElementById('settings-form').addEventListener('submit', async (e) =>
         card.style.display = '';
       }
     });
-    showStatus('Please fix the errors highlighted above.', 'error');
+    showStatus(t('fixErrors'), 'error');
     return;
   }
 
   try {
     await chrome.storage.sync.set({ rules: validProjects });
-    showStatus(`Saved ${validProjects.length} project(s) successfully!`, 'success');
+    showStatus(t('savedSuccess', { count: validProjects.length }), 'success');
   } catch (err) {
     console.error('Failed to save rules:', err);
-    showStatus('Failed to save projects to storage.', 'error');
+    showStatus(t('saveError'), 'error');
   }
 });
 
@@ -346,14 +399,47 @@ document.getElementById('btn-add-project').addEventListener('click', () => {
   if (searchInput && searchInput.value) {
     searchInput.value = '';
   }
-  const newCard = addProjectCard({ name: `Project ${document.querySelectorAll('.project-card').length + 1}` });
+  const defaultName = t('defaultProjectName', { index: document.querySelectorAll('.project-card').length + 1 });
+  const newCard = addProjectCard({ name: defaultName });
   filterProjects();
   const prodInput = newCard.querySelector('.input-prod');
   prodInput?.focus();
 });
 
+// Setup language switcher
+const initLanguage = async () => {
+  const lang = await getLang();
+  updateLangPickerUI(lang);
+  applyI18nToDOM();
+
+  document.querySelectorAll('.btn-lang').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const selectedLang = btn.getAttribute('data-lang');
+      await setLang(selectedLang);
+      updateLangPickerUI(selectedLang);
+      applyI18nToDOM();
+      refreshAllCardLabels();
+      filterProjects();
+    });
+  });
+};
+
+// Setup theme switcher
+const initThemeToggle = async () => {
+  const current = await initTheme();
+  updateThemeIcon(current);
+
+  const toggleBtn = document.getElementById('btn-theme-toggle');
+  toggleBtn?.addEventListener('click', async () => {
+    const newTheme = await toggleTheme();
+    updateThemeIcon(newTheme);
+  });
+};
+
 // Load saved configuration
 document.addEventListener('DOMContentLoaded', async () => {
+  await initThemeToggle();
+  await initLanguage();
   initSearch();
 
   try {
@@ -365,7 +451,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (result.prod || result.dev) {
         rules = [{
           id: 'proj_legacy',
-          name: 'Main Project',
+          name: t('mainProject'),
           prod: result.prod || '',
           dev: result.dev || ''
         }];
@@ -377,11 +463,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (rules.length > 0) {
       rules.forEach((project) => addProjectCard(project));
     } else {
-      addProjectCard({ name: 'Project 1' });
+      addProjectCard({ name: t('defaultProjectName', { index: 1 }) });
     }
   } catch (err) {
     console.error('Error loading configuration:', err);
-    addProjectCard({ name: 'Project 1' });
+    addProjectCard({ name: t('defaultProjectName', { index: 1 }) });
   }
 
   filterProjects();
