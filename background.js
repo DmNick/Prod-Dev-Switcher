@@ -1,3 +1,5 @@
+/* global chrome */
+
 const ICONS = {
   prod: 'icons/PROD-128.png',
   dev: 'icons/DEV-128.png',
@@ -126,10 +128,13 @@ const init = async (tabId, existingTab = null) => {
     await chrome.action.setBadgeText({ tabId, text: '' }).catch(() => {});
 
     const tooltip = rulesCount > 0
-      ? 'Prod-Dev Switcher (No matching project for this tab)'
+      ? 'Prod-Dev Switcher (Click to view saved projects)'
       : 'Prod-Dev Switcher (Click to configure projects in settings)';
     await chrome.action.setTitle({ tabId, title: tooltip }).catch(() => {});
   }
+
+  // Ensure popup is set to open every time on all tabs
+  await chrome.action.setPopup({ tabId, popup: 'popup.html' }).catch(() => {});
 };
 
 const click = async (tab) => {
@@ -137,8 +142,14 @@ const click = async (tab) => {
     const matchResult = await getMatched(tab?.id, tab);
     const { matched, targetBase, tabUrl, rulesCount } = matchResult;
 
-    // If no projects configured or current tab doesn't match any project, open settings
+    // If no projects configured or current tab doesn't match any project
     if (rulesCount === 0 || !matched || !targetBase) {
+      if (chrome.action?.openPopup) {
+        try {
+          await chrome.action.openPopup();
+          return;
+        } catch {}
+      }
       return chrome.runtime.openOptionsPage();
     }
 
@@ -165,22 +176,66 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+// Fallback if popup is cleared or disabled
 chrome.action.onClicked.addListener((tab) => {
   click(tab);
 });
 
-// Immediately update active tab when projects change in settings
+// Keyboard shortcut listener (Alt+Shift+S)
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'toggle_env') {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab) {
+      await click(tab);
+    }
+  }
+});
+
+// Message listener for popup or background requests
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.action === 'toggle_tab') {
+    (async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+          await click(tab);
+          sendResponse({ success: true });
+        } else {
+          sendResponse({ success: false, error: 'No active tab' });
+        }
+      } catch (err) {
+        console.error('toggle_tab error:', err);
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+});
+
+// Immediately update all tabs when projects change in settings
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync') {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) init(tabs[0].id, tabs[0]);
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab?.id) init(tab.id, tab);
+      });
     });
   }
 });
 
-// Initialize on extension startup or update
+// Initialize all open tabs on extension startup or update
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) init(tabs[0].id, tabs[0]);
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (tab?.id) init(tab.id, tab);
+    });
+  });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (tab?.id) init(tab.id, tab);
+    });
   });
 });

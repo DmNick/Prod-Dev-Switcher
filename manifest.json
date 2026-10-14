@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Prod-Dev Switcher",
-  "version": "1.1",
+  "version": "1.2",
   "description": "One-click switching between environment domains.",
   "permissions": [
     "storage",
@@ -23,10 +23,11 @@
   },
   "action": {
     "default_icon": "icons/ICON.png",
-    "default_title": "Prod-Dev Switcher"
+    "default_title": "Prod-Dev Switcher",
+    "default_popup": "popup.html"
   },
   "commands": {
-    "_execute_action": {
+    "toggle_env": {
       "suggested_key": {
         "default": "Alt+Shift+S",
         "mac": "Alt+Shift+S"

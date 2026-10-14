@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prod-Dev Switcher</title>
+  <style>
+    :root {
+      --bg: #121316;
+      --card-bg: #1c1d24;
+      --card-inner: #16171d;
+      --border: #2c2f38;
+      --border-hover: #3e4451;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --prod: #ef4444;
+      --prod-hover: #dc2626;
+      --dev: #3b82f6;
+      --dev-hover: #2563eb;
+      --success: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      width: 350px;
+      margin: 0;
+      padding: 14px;
+      user-select: none;
+    }
+
+    .header-action {
+      margin-bottom: 14px;
+    }
+
+    .btn-toggle {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 9px;
+      padding: 10px 14px;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      text-align: center;
+    }
+
+    .btn-toggle:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-toggle:active {
+      transform: translateY(0);
+    }
+
+    .btn-toggle.env-prod {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+    }
+    .btn-toggle.env-prod:hover {
+      background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+    }
+
+    .btn-toggle.env-dev {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .btn-toggle.env-dev:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-toggle.env-unmatched {
+      background: #1c1d24;
+      border-color: var(--border);
+      box-shadow: none;
+      color: var(--text-muted);
+    }
+    .btn-toggle.env-unmatched:hover {
+      background: #252833;
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    .toggle-main {
+      font-size: 0.92rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle-subtitle {
+      font-size: 0.73rem;
+      opacity: 0.85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 310px;
+    }
+
+    .section-header {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding: 0 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 2px;
+      margin-bottom: 12px;
+    }
+
+    .projects-list::-webkit-scrollbar {
+      width: 5px;
+    }
+    .projects-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .projects-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .projects-list::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+
+    .project-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .project-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .project-card.active-project {
+      border-color: rgba(59, 130, 246, 0.6);
+      background-color: rgba(59, 130, 246, 0.08);
+    }
+
+    .project-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .project-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .active-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--success);
+      background-color: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+
+    .project-domains {
+      font-size: 0.69rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .project-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .btn-env {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      transition: all 0.15s ease;
+      outline: none;
+      border: 1px solid transparent;
+    }
+
+    .btn-env-prod {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+
+    .btn-env-prod:hover {
+      background-color: var(--prod);
+      border-color: var(--prod);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-env-dev {
+      background-color: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.35);
+      color: #60a5fa;
+    }
+
+    .btn-env-dev:hover {
+      background-color: var(--dev);
+      border-color: var(--dev);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 20px 10px;
+      background-color: var(--card-inner);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .empty-state p {
+      margin-bottom: 8px;
+    }
+
+    .btn-empty-add {
+      background-color: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #60a5fa;
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-empty-add:hover {
+      background-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    .btn-options {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 12px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-options:hover {
+      background-color: #252833;
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="header-action">
+    <button type="button" id="btn-toggle-current" class="btn-toggle">
+      <div class="toggle-main">
+        <span>&#8644;</span>
+        <span id="toggle-label">Toggle PROD / DEV</span>
+      </div>
+      <div class="toggle-subtitle" id="toggle-desc">Switch environment for active tab</div>
+    </button>
+  </div>
+
+  <div class="section-header">
+    <span>Saved Projects</span>
+    <span id="projects-count"></span>
+  </div>
+
+  <div id="projects-container" class="projects-list">
+    <!-- Populated by popup.js -->
+  </div>
+
+  <div class="footer">
+    <button type="button" id="btn-options" class="btn-options">
+      <span>&#9881;</span>
+      <span>Settings / Options</span>
+    </button>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
